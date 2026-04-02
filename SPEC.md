@@ -1,67 +1,63 @@
-# SPEC: 3D 移动演示 — Godot 4.x
+# 3D 贪吃蛇 — Godot 4.x
 
-## 1. 项目概述
+## 1. 概述
 
-- **类型**: 3D 第一人称/第三人称移动演示
-- **核心功能**: 玩家在 3D 场景中自由行走、跳跃、环顾
-- **目标平台**: Linux (HTML5 导出为 Web)
+俯视 3D 贪吃蛇，蛇头 + 身体节段在网格上移动，吃食物增长，碰墙或自身则 game over。
 
-## 2. 视觉与场景
+## 2. 相机
 
-### 环境
+- 固定俯角 60°，方向对准地面
+- 跟随蛇头：相机每帧 Lerp 移动到蛇头正上方 + 偏移
+- 相机不旋转，只平移
 
-- 无限地面（GridMap 或大型 StaticBody3D plane）
-- 周围随机放置彩色立方体/圆柱作为参照物
-- 天空盒（Engine.default_clear_color 或 Sky）
-- 基础光照：DirectionalLight3D + Ambient
+## 3. 场景
 
-### 材质
+### 地面
+- 20×20 格子地面，深绿色格子材质
+- 边界墙（4面）
 
-- 地面：深灰绿色 GridMaterial
-- 物体：随机饱和色（红/蓝/黄/绿）BasicStandardMaterial
-- 玩家胶囊：白色，略带发光
+### 蛇
+- **蛇头**：CSGBox3D，浅蓝色，带微弱自发光
+- **身体节段**：CSGBox3D，渐变颜色（从头部到尾部由浅到深）
+- 每节 1×1×1 格子
 
-## 3. 角色控制
+### 食物
+- CSGSphere3D，红色，每帧旋转
+- 随机出现在空格子上
 
-### 移动
+## 4. 玩法
 
-- WASD 前后左右
-- Space 跳跃（仅在地面上）
-- 鼠标移动控制视角（Pointer Lock）
-- Shift 加速跑
-
-### 参数
-
-| 参数 | 值 |
+| 操作 | 键位 |
 |---|---|
-| 行走速度 | 8.0 m/s |
-| 跑酷速度 | 16.0 m/s |
-| 跳跃力 | 10.0 |
-| 重力 | 20.0 |
-| 鼠标灵敏度 | 0.3 |
+| 转向（4方向）| WASD / 方向键 |
+| 加速（可选）| Shift |
+| 重新开始 | R |
 
-## 4. 交互
+**规则：**
+- 蛇头每 0.25s 移动一格（可配置速度）
+- 不能反方向掉头（向右走时不能直接向左）
+- 吃食物 → 尾巴加一节 → 分数+10
+- 撞墙或撞自己 → Game Over 画面
 
-- 点击 Canvas 开始 Pointer Lock
-- ESC 释放鼠标锁
-- UI 显示操作说明
+## 5. UI
 
-## 5. 技术栈
+- 左上角：分数
+- Game Over 时居中显示「Game Over」+ 「按 R 重来」
 
-- Godot 4.x GDScript
-- CharacterBody3D 玩家节点
-- CSGBox3D / CSGCylinder3D 环境几何体
-- SubViewport + Scene 渲染 HTML5
+## 6. 技术点
 
-## 6. 文件结构
+- 蛇身用 `Array[Vector3i]` 存储每节位置
+- 每步移动：尾部 pop → 头部 unshift 新位置
+- 食物位置用 `randi()` % 范围随机生成
+
+## 7. 文件
 
 ```
-godot-3d-demo/
-├── project.godot
-├── SPEC.md
-├── scenes/
-│   ├── main.tscn        # 主场景（世界+玩家）
-│   └── player.tscn      # 玩家预制体
-└── scripts/
-    └── player.gd        # 玩家控制器脚本
+scripts/
+├── snake_game.gd    # 主控制器（管理蛇、食物、分数、状态）
+├── snake_body.gd    # 每节蛇身的 mesh 刷新
+└── camera_follow.gd # 相机跟随逻辑
+scenes/
+├── main.tscn        # 主场景（不变，贪吃蛇模式）
+└── snake_segment.tscn  # 蛇节段预制体（可复用）
 ```

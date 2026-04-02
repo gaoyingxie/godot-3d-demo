@@ -32,7 +32,7 @@ shadow_enabled = true
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 
 [node name="Ground" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, -0.1, 10)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
 material_override = SubResource("StandardMaterial3D_ground")
@@ -42,35 +42,35 @@ mesh = SubResource("BoxMesh_ground")
 shape = SubResource("BoxShape3D_ground")
 
 [node name="WallNorth" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, -0.5)
 size = Vector3(20, 1, 1)
 material_override = SubResource("StandardMaterial3D_wall")
 
 [node name="WallSouth" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, 20)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, 20.5)
 size = Vector3(20, 1, 1)
 material_override = SubResource("StandardMaterial3D_wall")
 
 [node name="WallWest" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0.5, 10)
 size = Vector3(1, 1, 20)
 material_override = SubResource("StandardMaterial3D_wall")
 
 [node name="WallEast" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0.5, 10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.5, 0.5, 10)
 size = Vector3(1, 1, 20)
 material_override = SubResource("StandardMaterial3D_wall")
 
 [node name="SnakeWorld" type="Node3D" parent="."]
 
 [node name="Food" type="CSGSphere3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, 10)
 radius = 0.4
 height = 0.8
 material_override = SubResource("StandardMaterial3D_food")
 
 [node name="CameraAnchor" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 15, 9)
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 10, 16, 19)
 
 [node name="Camera3D" type="Camera3D" parent="CameraAnchor"]
 current = true

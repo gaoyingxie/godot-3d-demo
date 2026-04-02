@@ -15,7 +15,6 @@ var _falling: bool = false
 # 节点引用
 @onready var _cam_pivot: Node3D = $CamPivot
 @onready var _camera: Camera3D = $CamPivot/Camera3D
-@onready var _mesh: MeshInstance3D = $Mesh
 
 func _ready() -> void:
 	# 锁定并隐藏鼠标

@@ -189,7 +189,7 @@ func _tick() -> void:
 		if snake_body.size() > 1:
 			_seg_set_color(_segments[1], false)
 
-	_spawn_food()
+		_spawn_food()
 
 
 func _game_over() -> void:

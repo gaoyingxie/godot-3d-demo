@@ -2,35 +2,33 @@ extends Node3D
 ## 贪吃蛇主控制器 — 管理蛇身、食物、分数、游戏状态
 
 # ── 地图 ──
-const GRID_SIZE: int = 20          # 20×20 格子
-const CELL_SIZE: float = 1.0      # 每格 1 米
+const GRID_SIZE: int = 20
+const CELL_SIZE: float = 1.0
 
 # ── 蛇 ──
-var snake_body: Array[Vector3i] = []  # 每节对应的格子坐标 (x, y=0, z)
-var direction: Vector3i = Vector3i(1, 0, 0)  # 当前方向
-var next_direction: Vector3i = Vector3i(1, 0, 0)  # 下一帧方向（缓冲）
+var snake_body: Array[Vector3i] = []  # 每节格子坐标
+var direction: Vector3i = Vector3i(1, 0, 0)
+var next_direction: Vector3i = Vector3i(1, 0, 0)
 var is_alive: bool = true
 var score: int = 0
 
 # ── 计时器 ──
-const TICK_INTERVAL: float = 0.22   # 每次移动间隔（秒）
+const TICK_INTERVAL: float = 0.22
 var tick_timer: float = 0.0
 
 # ── 预制体 ──
 var _segment_scene: PackedScene
-var _segments: Array[Node3D] = []  # 已实例化的节点
+var _segments: Array[Node3D] = []  # 已实例化的节点（与 snake_body 一一对应）
 
 # ── 食物 ──
 var _food_position: Vector3i = Vector3i.ZERO
-var _food_mesh: Node3D
 
 # ── 节点 ──
 @onready var _world_root: Node3D = $SnakeWorld
 @onready var _cam_follow: Node3D = $CameraAnchor
-@onready var _camera: Camera3D = $CameraAnchor/Camera3D
+@onready var _food_marker: Node3D = $Food
 @onready var _ui_label: Label = $UI/ScoreLabel
 @onready var _gameover_panel: Control = $UI/GameOverPanel
-@onready var _food_marker: Node3D = $Food
 
 func _ready() -> void:
 	_segment_scene = preload("res://snake/snake_segment.tscn")
@@ -39,18 +37,23 @@ func _ready() -> void:
 
 
 func _start_game() -> void:
-	# 重置蛇
+	# 清理旧节点
 	for s in _segments:
 		s.queue_free()
 	_segments.clear()
 	snake_body.clear()
 
-	# 蛇头放中间偏左，面向右
-	var start_pos := Vector3i(GRID_SIZE / 2 - 2, 0, GRID_SIZE / 2)
+	# 蛇头放中间，面向右
+	var start_x: int = GRID_SIZE / 2 - 2
+	var start_z: int = GRID_SIZE / 2
 	for i in range(3):
-		var pos := Vector3i(start_pos.x - i, 0, start_pos.z)
+		var pos := Vector3i(start_x - i, 0, start_z)
 		snake_body.append(pos)
-		_add_segment(pos, i == 0)
+		var seg: Node3D = _segment_scene.instantiate()
+		_seg_set_color(seg, i == 0)
+		_world_root.add_child(seg)
+		_seg_update_pos(seg, pos)
+		_segments.append(seg)
 
 	direction = Vector3i(1, 0, 0)
 	next_direction = direction
@@ -62,27 +65,27 @@ func _start_game() -> void:
 	_update_ui()
 
 
-func _add_segment(grid_pos: Vector3i, is_head: bool) -> void:
+func _add_new_segment(grid_pos: Vector3i, is_head: bool) -> void:
 	var seg: Node3D = _segment_scene.instantiate()
 	_seg_set_color(seg, is_head)
 	_world_root.add_child(seg)
-	_seg_update_world_pos(seg, grid_pos)
+	_seg_update_pos(seg, grid_pos)
 	_segments.append(seg)
 
 
 func _seg_set_color(seg: Node3D, is_head: bool) -> void:
 	var mat := StandardMaterial3D.new()
 	if is_head:
-		mat.albedo_color = Color(0.4, 0.8, 1.0)
+		mat.albedo_color = Color(0.4, 0.8, 1.0, 1.0)
 		mat.emission_enabled = true
-		mat.emission = Color(0.2, 0.5, 0.8)
+		mat.emission = Color(0.2, 0.5, 0.8, 1.0)
 		mat.emission_energy_multiplier = 0.5
 	else:
-		mat.albedo_color = Color(0.3, 0.7, 0.4)
-	seg.material_override = mat
+		mat.albedo_color = Color(0.3, 0.7, 0.4, 1.0)
+	seg.set("material_override", mat)
 
 
-func _seg_update_world_pos(seg: Node3D, grid_pos: Vector3i) -> void:
+func _seg_update_pos(seg: Node3D, grid_pos: Vector3i) -> void:
 	seg.position = Vector3(grid_pos.x * CELL_SIZE, 0.5, grid_pos.z * CELL_SIZE)
 
 
@@ -91,26 +94,23 @@ func _spawn_food() -> void:
 	for x in range(GRID_SIZE):
 		for z in range(GRID_SIZE):
 			var p := Vector3i(x, 0, z)
-			if not _is_occupied(p):
+			if not (p in snake_body):
 				valid_positions.append(p)
 
 	if valid_positions.is_empty():
-		return  # 满了（理论上不会发生）
+		return
 
 	_food_position = valid_positions[randi() % valid_positions.size()]
 	_food_marker.position = Vector3(_food_position.x * CELL_SIZE, 0.5, _food_position.z * CELL_SIZE)
 
 
-func _is_occupied(pos: Vector3i) -> bool:
-	return pos in snake_body
-
-
 func _process(delta: float) -> void:
-	# 相机跟随
-	var head_world := Vector3(snake_body[0].x * CELL_SIZE, 0, snake_body[0].z * CELL_SIZE)
-	_cam_follow.position = _cam_follow.position.lerp(
-		Vector3(head_world.x, 15.0, head_world.z + 8.0), delta * 8.0
-	)
+	# 相机跟随蛇头
+	if not snake_body.is_empty():
+		var head: Vector3i = snake_body[0]
+		var target := Vector3(head.x * CELL_SIZE, 15.0, head.z * CELL_SIZE + 8.0)
+		_cam_follow.position = _cam_follow.position.lerp(target, delta * 8.0)
+
 	_food_marker.rotate_y(delta * 2.0)
 
 	if not is_alive:
@@ -118,7 +118,7 @@ func _process(delta: float) -> void:
 			_restart()
 		return
 
-	# 方向输入（缓冲，防止一帧内按多次导致倒退）
+	# 方向输入（缓冲）
 	if Input.is_action_just_pressed("move_forward"):
 		_try_set_direction(Vector3i(0, 0, -1))
 	elif Input.is_action_just_pressed("move_backward"):
@@ -129,7 +129,7 @@ func _process(delta: float) -> void:
 		_try_set_direction(Vector3i(1, 0, 0))
 
 	tick_timer += delta
-	var speed: float = TICK_INTERVAL * (0.6 if Input.is_action_pressed("sprint") else 1.0)
+	var speed: float = TICK_INTERVAL * (0.55 if Input.is_action_pressed("sprint") else 1.0)
 
 	if tick_timer >= speed:
 		tick_timer = 0.0
@@ -153,34 +153,43 @@ func _tick() -> void:
 		_game_over()
 		return
 
-	# 撞自己（排除尾巴，因为尾巴会移走）
+	# 撞自己
 	if new_head in snake_body:
 		_game_over()
 		return
 
-	# 移动蛇：pop 尾，unshift 头
-	var tail: Vector3i = snake_body.pop_back()
-	_segments[-1].queue_free()
-	_segments.pop_back()
+	var ate_food: bool = (new_head == _food_position)
 
-	snake_body.push_front(new_head)
-	_add_segment(new_head, true)
-	# 新的头是唯一有这个颜色的，原来第二格变成普通身体
-	if snake_body.size() > 1:
-		_seg_set_color(_segments[1], false)
-
-	# 吃食物
-	if new_head == _food_position:
+	if ate_food:
 		score += 10
 		_update_ui()
-		# 尾巴不退，把刚才 pop 的尾巴加回去
-		snake_body.push_back(tail)
-		var old_tail_seg: Node3D = _segment_scene.instantiate()
-		_seg_set_color(old_tail_seg, false)
-		_world_root.add_child(old_tail_seg)
-		_seg_update_world_pos(old_tail_seg, tail)
-		_segments.append(old_tail_seg)
-		_spawn_food()
+		# 蛇身变长：把尾巴那节移到新头位置，不删除尾
+		snake_body.push_front(new_head)
+		var tail_seg: Node3D = _segments.pop_back()      # 暂存尾节点
+		snake_body.push_back(snake_body[-1])             # 复制尾到新尾
+		snake_body[-2] = new_head                        # 第二格变头
+
+		# 把尾节点移到新头位置
+		_seg_update_pos(tail_seg, new_head)
+		_seg_set_color(tail_seg, true)
+		_segments.push_front(tail_seg)
+
+		# 原来的头变成普通身体
+		_seg_set_color(_segments[1], false)
+	else:
+		# 正常移动：把尾节点移到新头位置
+		snake_body.push_front(new_head)
+		var tail_seg: Node3D = _segments.pop_back()
+		_seg_update_pos(tail_seg, new_head)
+		_seg_set_color(tail_seg, true)
+		_segments.push_front(tail_seg)
+		snake_body.pop_back()
+
+		# 新的头是唯一有这个颜色的，原来第二格变普通
+		if snake_body.size() > 1:
+			_seg_set_color(_segments[1], false)
+
+	_spawn_food()
 
 
 func _game_over() -> void:
@@ -196,6 +205,3 @@ func _restart() -> void:
 
 func _update_ui() -> void:
 	_ui_label.text = "分数: %d" % score
-
-
-

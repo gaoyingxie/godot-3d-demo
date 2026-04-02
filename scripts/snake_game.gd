@@ -163,33 +163,32 @@ func _tick() -> void:
 	if ate_food:
 		score += 10
 		_update_ui()
-		# 蛇身变长：把尾巴那节移到新头位置，不删除尾
-		snake_body.push_front(new_head)
-		var tail_seg: Node3D = _segments.pop_back()      # 暂存尾节点
-		snake_body.push_back(snake_body[-1])             # 复制尾到新尾
-		snake_body[-2] = new_head                        # 第二格变头
-
-		# 把尾节点移到新头位置
-		_seg_update_pos(tail_seg, new_head)
-		_seg_set_color(tail_seg, true)
-		_segments.push_front(tail_seg)
-
-		# 原来的头变成普通身体
-		_seg_set_color(_segments[1], false)
-	else:
-		# 正常移动：把尾节点移到新头位置
-		snake_body.push_front(new_head)
-		var tail_seg: Node3D = _segments.pop_back()
-		_seg_update_pos(tail_seg, new_head)
-		_seg_set_color(tail_seg, true)
-		_segments.push_front(tail_seg)
-		snake_body.pop_back()
-
-		# 新的头是唯一有这个颜色的，原来第二格变普通
-		if snake_body.size() > 1:
-			_seg_set_color(_segments[1], false)
-
 		_spawn_food()
+
+	# 蛇身移动：尾节点移到新头位置
+	snake_body.push_front(new_head)
+	var tail_seg: Node3D = _segments.pop_back()
+	_seg_update_pos(tail_seg, new_head)
+	_seg_set_color(tail_seg, true)
+	_segments.push_front(tail_seg)
+
+	if not ate_food:
+		snake_body.pop_back()   # 没吃东西才缩回去
+		if snake_body.size() > 1:
+			_seg_set_color(_segments[1], false)   # 原来第二格变普通身体
+	else:
+		# 吃东西了：尾节点要保留（变长）
+		var new_tail: Node3D = _segment_scene.instantiate()
+		_seg_set_color(new_tail, false)
+		_world_root.add_child(new_tail)
+		var last_pos: Vector3i = snake_body[-1]
+		_seg_update_pos(new_tail, last_pos)
+		_segments.append(new_tail)
+
+	# 新的头是唯一有这个颜色的
+	_seg_set_color(_segments[0], true)
+	if _segments.size() > 1:
+		_seg_set_color(_segments[1], false)
 
 
 func _game_over() -> void:

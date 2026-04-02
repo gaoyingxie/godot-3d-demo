@@ -42,22 +42,22 @@ mesh = SubResource("BoxMesh_ground")
 shape = SubResource("BoxShape3D_ground")
 
 [node name="WallNorth" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, -0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, 0)
 size = Vector3(20, 1, 1)
 material_override = SubResource("StandardMaterial3D_wall")
 
 [node name="WallSouth" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, 19.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, 20)
 size = Vector3(20, 1, 1)
 material_override = SubResource("StandardMaterial3D_wall")
 
 [node name="WallWest" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0.5, 10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 10)
 size = Vector3(1, 1, 20)
 material_override = SubResource("StandardMaterial3D_wall")
 
 [node name="WallEast" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.5, 0.5, 10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0.5, 10)
 size = Vector3(1, 1, 20)
 material_override = SubResource("StandardMaterial3D_wall")
 

@@ -90,9 +90,10 @@ func _seg_update_pos(seg: Node3D, grid_pos: Vector3i) -> void:
 
 
 func _spawn_food() -> void:
+	# 墙厚1格，有效范围是 1~GRID_SIZE-2
 	var valid_positions: Array[Vector3i] = []
-	for x in range(GRID_SIZE):
-		for z in range(GRID_SIZE):
+	for x in range(1, GRID_SIZE - 1):
+		for z in range(1, GRID_SIZE - 1):
 			var p := Vector3i(x, 0, z)
 			if not (p in snake_body):
 				valid_positions.append(p)
